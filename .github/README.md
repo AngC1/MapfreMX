@@ -77,6 +77,23 @@ Template estándar para crear nuevos skills siguiendo las convenciones.
 
 ## 🎯 ¿Cuál es la Estructura Ideal para IA?
 
+## 🧠 Estrategia SDD + Context Engineering
+
+Este repositorio aplica **SDD (Spec Driven Development)** y **Context Engineering** para mejorar calidad y reusabilidad:
+
+1. **Spec primero**: definir comportamiento esperado en `Skill.md` y `docs/api/`.
+2. **Design explicito**: documentar arquitectura y reglas en guias y archivos de contexto global.
+3. **Develop reproducible**: implementar con scripts estandar (`scripts/`) y estructura consistente.
+4. **Validate continuo**: pruebas + checklist + actualizacion de documentacion.
+5. **Context layering**: `README` -> `Skill-Catalog` -> `AGENT` -> adapter modelo -> `skill/<project>/Skill.md`.
+
+### Nombres Canonicos (evitar variantes)
+
+- `skill/` (no `skills/`)
+- `Skill.md` (no `Skill.m`)
+- `AGENT.md` (no `Agnet.md`)
+- `CLAUDE.md` (no `Cloud.md` ni `Cloude.md`)
+
 ### Principios de Diseño
 
 1. **Claridad Jerárquica**
