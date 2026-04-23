@@ -18,8 +18,8 @@ spec:
         name:
           title: Nombre del componente
           type: string
-          pattern: '^[a-z0-9-]+$'
-          description: Usa minúsculas, números y guiones
+          pattern: '^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$'
+          description: Usa minúsculas, números y guiones (sin guion inicial/final)
         repoOwner:
           title: Organización/usuario de GitHub
           type: string

@@ -32,7 +32,7 @@ pipeline {
       when {
         anyOf {
           branch 'main'
-          tag pattern: 'v.*', comparator: 'REGEXP'
+          tag pattern: 'v[0-9]+.*', comparator: 'REGEXP'
         }
       }
       steps {
