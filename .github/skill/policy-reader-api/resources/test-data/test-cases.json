@@ -1,0 +1,66 @@
+{
+  "testCases": [
+    {
+      "id": "test_001",
+      "name": "Valid policy with all fields",
+      "input": {
+        "rawText": "Aseguradora: Mapfre\nNumero de poliza: POL-2026-1001\nTomador: Laura Gomez\nProducto: Hogar Base\nFecha inicio: 2026-03-01\nFecha fin: 2027-02-28"
+      },
+      "expectedOutput": {
+        "policyNumber": "POL-2026-1001",
+        "insurerName": "Mapfre",
+        "holderName": "Laura Gomez",
+        "productName": "Hogar Base",
+        "effectiveFrom": "2026-03-01",
+        "effectiveTo": "2027-02-28",
+        "confidence": 1.0,
+        "missingFields": []
+      }
+    },
+    {
+      "id": "test_002",
+      "name": "Policy with missing fields",
+      "input": {
+        "rawText": "Aseguradora: Mapfre\nNumero de poliza: POL-2026-1002"
+      },
+      "expectedOutput": {
+        "policyNumber": "POL-2026-1002",
+        "insurerName": "Mapfre",
+        "holderName": null,
+        "productName": null,
+        "effectiveFrom": null,
+        "effectiveTo": null,
+        "confidence": 0.333,
+        "missingFields": ["holderName", "productName", "effectiveFrom", "effectiveTo"]
+      }
+    },
+    {
+      "id": "test_003",
+      "name": "Policy with alternative field names",
+      "input": {
+        "rawText": "Compania: Mapfre\nNumero de Poliza: POL-2026-1003\nAsegurado: Juan Perez\nRamo: Automovil\nVigencia desde: 2026-01-01\nVigencia hasta: 2027-01-01"
+      },
+      "expectedOutput": {
+        "policyNumber": "POL-2026-1003",
+        "insurerName": "Mapfre",
+        "holderName": "Juan Perez",
+        "productName": "Automovil",
+        "effectiveFrom": "2026-01-01",
+        "effectiveTo": "2027-01-01",
+        "confidence": 1.0,
+        "missingFields": []
+      }
+    },
+    {
+      "id": "test_004",
+      "name": "Empty policy text",
+      "input": {
+        "rawText": ""
+      },
+      "expectedOutput": {
+        "error": "Validation failed",
+        "statusCode": 400
+      }
+    }
+  ]
+}

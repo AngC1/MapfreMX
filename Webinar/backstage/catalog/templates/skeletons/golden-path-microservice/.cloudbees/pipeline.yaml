@@ -1,0 +1,169 @@
+kind: pipeline
+type: yaml
+name: ${{ values.service_name }}
+
+# Pipeline Golden Path — CloudBees Unify
+# Generado automáticamente por el IDP de AYESA
+# Servicio: ${{ values.service_name }} | Stack: ${{ values.language }}
+
+triggers:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
+
+# Variables reutilizables en todos los stages
+environment:
+  SERVICE_NAME: ${{ values.service_name }}
+  REGISTRY: ${{ values.registry }}
+  IMAGE: "${{ values.registry }}/${{ values.service_name }}"
+  K8S_NAMESPACE: ${{ values.k8s_namespace }}
+  SONAR_PROJECT_KEY: ${{ values.sonar_project_key }}
+
+stages:
+
+  # ── 1. Build ──────────────────────────────────────────────────────────────
+  - name: build
+    steps:
+      - name: compile
+        image: >-
+{%- if values.language == "java-springboot" %}
+          maven:3.9-eclipse-temurin-21
+        run: |
+          ./mvnw clean package -DskipTests -B
+          echo "Build completado: $(ls target/*.jar)"
+{%- elif values.language == "node-express" or values.language == "node-nestjs" %}
+          node:20-alpine
+        run: |
+          npm ci --prefer-offline
+          npm run build
+{%- elif values.language == "python-fastapi" or values.language == "python-flask" %}
+          python:3.12-slim
+        run: |
+          pip install -r requirements.txt
+          python -m py_compile src/app/main.py
+{%- elif values.language == "golang" %}
+          golang:1.22-alpine
+        run: |
+          go mod download
+          go build -o ./bin/${{ values.service_name }} ./cmd/...
+{%- endif %}
+
+  # ── 2. Test ───────────────────────────────────────────────────────────────
+  - name: test
+    depends_on: [build]
+    steps:
+      - name: unit-tests
+        image: >-
+{%- if values.language == "java-springboot" %}
+          maven:3.9-eclipse-temurin-21
+        run: ./mvnw test -B
+        reports:
+          junit:
+            - target/surefire-reports/**/*.xml
+{%- elif values.language == "node-express" or values.language == "node-nestjs" %}
+          node:20-alpine
+        run: npm test -- --coverage --ci
+        reports:
+          junit:
+            - coverage/junit.xml
+{%- elif values.language == "python-fastapi" or values.language == "python-flask" %}
+          python:3.12-slim
+        run: pytest --junitxml=report.xml --cov=app
+        reports:
+          junit:
+            - report.xml
+{%- elif values.language == "golang" %}
+          golang:1.22-alpine
+        run: go test ./... -v -coverprofile=coverage.out
+{%- endif %}
+
+{%- if values.enable_sast %}
+  # ── 3. SAST — Análisis estático de seguridad ──────────────────────────────
+  - name: sast
+    depends_on: [test]
+    steps:
+      - name: sonarqube-scan
+        image: sonarsource/sonar-scanner-cli:latest
+        environment:
+          SONAR_HOST_URL:
+            from_secret: sonar_host_url
+          SONAR_TOKEN:
+            from_secret: sonar_token
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=${SONAR_HOST_URL} \
+            -Dsonar.login=${SONAR_TOKEN}
+
+      - name: semgrep-scan
+        image: returntocorp/semgrep:latest
+        run: |
+          semgrep --config=auto --json --output=semgrep-report.json . || true
+          echo "Semgrep finalizado."
+{%- endif %}
+
+  # ── 4. Package — Imagen Docker multi-stage ───────────────────────────────
+  - name: package
+    depends_on:
+{%- if values.enable_sast %}
+      - sast
+{%- else %}
+      - test
+{%- endif %}
+    steps:
+      - name: docker-build
+        image: plugins/docker
+        settings:
+          registry: ${{ values.registry }}
+          repo: ${IMAGE}
+          tags:
+            - "${DRONE_COMMIT_SHA:0:8}"
+            - latest
+          dockerfile: Dockerfile
+          build_args:
+            - "SERVICE_NAME=${{ values.service_name }}"
+          username:
+            from_secret: registry_username
+          password:
+            from_secret: registry_password
+
+{%- if values.enable_container_scan %}
+      - name: trivy-scan
+        image: aquasec/trivy:latest
+        run: |
+          trivy image \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            --format sarif \
+            --output trivy-report.sarif \
+            ${IMAGE}:${DRONE_COMMIT_SHA:0:8}
+{%- endif %}
+
+  # ── 5. Deploy — Actualizar manifiestos GitOps ────────────────────────────
+  - name: deploy
+    depends_on: [package]
+    when:
+      branch:
+        - main
+    steps:
+      - name: update-gitops-manifests
+        image: alpine/git:latest
+        environment:
+          GIT_TOKEN:
+            from_secret: github_token
+        run: |
+          git config --global user.email "idp-bot@ayesa.com"
+          git config --global user.name "IDP Golden Path Bot"
+          IMAGE_TAG=${DRONE_COMMIT_SHA:0:8}
+          # Actualiza el tag de imagen en el overlay del entorno destino
+          sed -i "s|image: ${IMAGE}:.*|image: ${IMAGE}:${IMAGE_TAG}|g" \
+            deploy/k8s/overlays/${K8S_NAMESPACE}/kustomization.yaml
+          git add deploy/k8s/overlays/${K8S_NAMESPACE}/
+          git commit -m "chore(deploy): bump ${SERVICE_NAME} to ${IMAGE_TAG} [skip ci]"
+          git push https://idp-bot:${GIT_TOKEN}@github.com/${{ values.repo_org }}/${{ values.service_name }}.git HEAD:main

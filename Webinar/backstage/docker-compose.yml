@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: backstage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: backstage
+      POSTGRES_PASSWORD: backstage
+      POSTGRES_DB: backstage
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - backstage-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U backstage"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backstage:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: backstage-app
+    restart: unless-stopped
+    ports:
+      - "7007:7007"
+      - "3000:3000"
+    environment:
+      # Configuración de base de datos
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: backstage
+      POSTGRES_PASSWORD: backstage
+      # Configuración de la aplicación
+      APP_CONFIG_app_baseUrl: http://localhost:7007
+      APP_CONFIG_backend_baseUrl: http://localhost:7007
+      APP_CONFIG_backend_cors_origin: http://localhost:3000
+      APP_CONFIG_backend_listen_port: 7007
+      APP_CONFIG_backend_listen_host: 0.0.0.0
+      # Configuración de autenticación (guest - sin autenticación para demo)
+      APP_CONFIG_auth_environment: development
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backstage-network
+    volumes:
+      - backstage-app:/app
+      - ./app-config.yaml:/config/app-config.yaml:ro
+      - ./catalog:/config/catalog:ro
+
+volumes:
+  postgres-data:
+    driver: local
+  backstage-app:
+    driver: local
+
+networks:
+  backstage-network:
+    driver: bridge

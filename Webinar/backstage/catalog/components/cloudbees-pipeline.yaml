@@ -1,0 +1,20 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: cloudbees-pipeline-builder
+  title: CloudBees Pipeline Builder
+  description: Generador interactivo de pipelines CloudBees Unify
+  tags:
+    - cicd
+    - cloudbees
+    - react
+    - typescript
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: website
+  lifecycle: production
+  owner: devops-team
+  system: idp-platform
+  providesApis: []
+  consumesApis: []

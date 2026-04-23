@@ -1,0 +1,91 @@
+app:
+  title: AYESA IDP Platform
+  baseUrl: http://localhost:7007
+
+organization:
+  name: AYESA
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+    host: 0.0.0.0
+  
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+  
+  cors:
+    origin: http://localhost:7007
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  
+  database:
+    client: pg
+    connection:
+      host: ${POSTGRES_HOST}
+      port: ${POSTGRES_PORT}
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+      database: backstage
+      ssl: false
+
+integrations:
+  github:
+    - host: github.com
+      # Token opcional para acceder a repos privados
+      # token: ${GITHUB_TOKEN}
+
+proxy:
+  endpoints:
+    '/test':
+      target: 'https://example.com'
+      changeOrigin: true
+
+techdocs:
+  builder: 'local'
+  generator:
+    runIn: 'local'
+  publisher:
+    type: 'local'
+
+auth:
+  # Usar autenticación guest para demo (sin login)
+  environment: development
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+
+scaffolder:
+  # Configuración de templates
+  defaultAuthor:
+    name: AYESA DevOps
+    email: devops@ayesa.com
+  defaultCommitMessage: 'Initial commit from Backstage'
+
+catalog:
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  
+  rules:
+    - allow: [Component, System, API, Resource, Location, Template]
+  
+  locations:
+    # Catálogo local de componentes
+    - type: file
+      target: /app/catalog/all-components.yaml
+      rules:
+        - allow: [Component, System, API, Resource, Location, Template]
+    
+    # Template de ejemplo
+    - type: file
+      target: /app/catalog/templates.yaml
+      rules:
+        - allow: [Template]
+
+kubernetes:
+  serviceLocatorMethod:
+    type: 'multiTenant'
+  clusterLocatorMethods:
+    - type: 'config'
+      clusters: []

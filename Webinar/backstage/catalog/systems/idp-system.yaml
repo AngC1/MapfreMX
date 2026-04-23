@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: idp-platform
+  title: Internal Developer Platform
+  description: Plataforma de Desarrollo Interno AYESA
+  tags:
+    - idp
+    - cloudbees
+    - devsecops
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+spec:
+  owner: devops-team
+  domain: platform

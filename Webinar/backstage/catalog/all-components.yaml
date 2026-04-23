@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: ayesa-components
+  description: Catálogo de componentes AYESA IDP
+spec:
+  targets:
+    - ./systems/idp-system.yaml
+    - ./components/cloudbees-pipeline.yaml
+    - ./components/rox-demo.yaml

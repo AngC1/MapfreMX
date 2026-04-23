@@ -1,0 +1,20 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: rox-java-demo
+  title: ROX Java Demo Application
+  description: Aplicación demo Java con Docker para demostración IDP
+  tags:
+    - java
+    - docker
+    - demo
+    - maven
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  lifecycle: experimental
+  owner: devops-team
+  system: idp-platform
+  providesApis: []
+  consumesApis: []

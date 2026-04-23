@@ -1,0 +1,17 @@
+---
+- name: Crear usuario ops
+  user:
+    name: "{{ ops_user }}"
+    shell: /bin/bash
+    state: present
+
+- name: Aplicar actualizaciones de seguridad
+  apt:
+    upgrade: dist
+    update_cache: true
+
+- name: Habilitar logs del sistema
+  service:
+    name: rsyslog
+    state: started
+    enabled: true

@@ -1,0 +1,125 @@
+version: '3.9'
+
+services:
+  # Build container con Maven y Java 21
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+      args:
+        MAVEN_VERSION: 3.9.12
+        JAVA_VERSION: 21
+    container_name: rox-builder
+    environment:
+      - MAVEN_OPTS=-Dmaven.repo.local=/var/maven/.m2
+      - JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+    volumes:
+      - .:/workspace
+      - maven-cache:/var/maven/.m2
+    working_dir: /workspace
+    command: >
+      bash -c "
+        echo '=== Java Upgrade to 21 LTS ===' &&
+        echo 'Current Java Version:' &&
+        java -version &&
+        echo '' &&
+        echo '=== Building with Maven ===' &&
+        mvn clean package -Dmaven.compiler.source=21 -Dmaven.compiler.target=21 -DskipTests &&
+        echo '' &&
+        echo '=== Build completed successfully ===' &&
+        echo 'Waiting for inspection...' &&
+        sleep infinity
+      "
+    networks:
+      - rox-network
+    restart: unless-stopped
+
+  # PostgreSQL para testing
+  postgres:
+    image: postgres:15-alpine
+    container_name: rox-postgres
+    environment:
+      - POSTGRES_DB=rox_db
+      - POSTGRES_USER=roxuser
+      - POSTGRES_PASSWORD=roxpass123
+    ports:
+      - "5432:5432"
+    networks:
+      - rox-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roxuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis para caching
+  redis:
+    image: redis:7-alpine
+    container_name: rox-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    networks:
+      - rox-network
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Runtime container para ejecutar la app compilada
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAVA_VERSION: 21
+    container_name: rox-app
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8080
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/rox_db
+      - SPRING_DATASOURCE_USERNAME=roxuser
+      - SPRING_DATASOURCE_PASSWORD=roxpass123
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    ports:
+      - "8080:8080"
+    networks:
+      - rox-network
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    command: >
+      bash -c "
+        echo '=== ROX Java Application ===' &&
+        echo 'Java Version:' &&
+        java -version &&
+        echo '' &&
+        echo 'Starting application...' &&
+        java -jar /app/target/rox-java-demo-*.jar
+      "
+
+networks:
+  rox-network:
+    driver: bridge
+
+volumes:
+  maven-cache:
+  postgres_data:
+  redis_data:

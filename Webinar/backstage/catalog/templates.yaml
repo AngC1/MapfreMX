@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: ayesa-templates
+  description: Software Templates para AYESA IDP
+spec:
+  targets:
+    - ./templates/cloudbees-app-template.yaml
+    - ./templates/golden-path-microservice.yaml

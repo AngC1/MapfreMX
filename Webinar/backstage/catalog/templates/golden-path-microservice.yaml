@@ -1,0 +1,396 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: golden-path-microservice
+  title: "Golden Path: Microservicio Empresarial"
+  description: >
+    Camino dorado (Golden Path) para crear un microservicio siguiendo las mejores
+    prácticas de AYESA IDP. Incluye CI/CD con CloudBees, IaC con Terraform,
+    despliegue en Kubernetes, cobertura de tests, observabilidad y documentación TechDocs.
+  tags:
+    - recommended
+    - golden-path
+    - microservice
+    - kubernetes
+    - cloudbees
+    - terraform
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+
+spec:
+  owner: devops-team
+  type: service
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PARÁMETROS DEL TEMPLATE (wizard de auto-servicio)
+  # ─────────────────────────────────────────────────────────────────────────────
+  parameters:
+
+    # ── Paso 1: Información general del servicio ───────────────────────────────
+    - title: Información del Servicio
+      required:
+        - service_name
+        - description
+        - owner
+        - system
+      properties:
+        service_name:
+          title: Nombre del Servicio
+          type: string
+          description: >
+            Nombre único en kebab-case (ej: payments-api, user-profile-service).
+            Se usará como nombre del repositorio, imagen Docker y artefacto.
+          pattern: "^[a-z][a-z0-9-]{2,49}$"
+          ui:autofocus: true
+
+        description:
+          title: Descripción
+          type: string
+          description: Propósito del servicio en una línea.
+          ui:widget: textarea
+          ui:options:
+            rows: 3
+
+        owner:
+          title: Equipo Propietario
+          type: string
+          description: Grupo o usuario responsable del servicio.
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: [Group, User]
+
+        system:
+          title: Sistema al que Pertenece
+          type: string
+          description: Sistema del catálogo Backstage al que se asocia este servicio.
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: System
+
+        lifecycle:
+          title: Ciclo de Vida
+          type: string
+          description: Estado actual del servicio.
+          enum:
+            - experimental
+            - production
+            - deprecated
+          default: experimental
+
+    # ── Paso 2: Stack tecnológico ─────────────────────────────────────────────
+    - title: Stack Tecnológico
+      required:
+        - language
+      properties:
+        language:
+          title: Lenguaje / Framework
+          type: string
+          description: Selecciona el stack base del microservicio.
+          enum:
+            - java-springboot
+            - node-express
+            - node-nestjs
+            - python-fastapi
+            - python-flask
+            - golang
+          enumNames:
+            - "Java 21 + Spring Boot 3"
+            - "Node.js 20 + Express"
+            - "Node.js 20 + NestJS"
+            - "Python 3.12 + FastAPI"
+            - "Python 3.12 + Flask"
+            - "Go 1.22"
+          default: java-springboot
+
+        java_options:
+          title: Opciones Java (solo si elegiste Java)
+          type: object
+          properties:
+            add_spring_data:
+              title: Incluir Spring Data JPA
+              type: boolean
+              default: true
+            add_spring_security:
+              title: Incluir Spring Security + OAuth2
+              type: boolean
+              default: false
+            db_type:
+              title: Base de Datos
+              type: string
+              enum: [postgresql, mysql, mongodb, none]
+              default: postgresql
+
+          dependencies:
+            language:
+              - java-springboot
+
+        expose_openapi:
+          title: Exponer documentación OpenAPI / Swagger
+          type: boolean
+          default: true
+          description: Genera la especificación OpenAPI y la publica en el Developer Portal.
+
+    # ── Paso 3: Repositorio y control de versiones ───────────────────────────
+    - title: Repositorio
+      required:
+        - repo_org
+      properties:
+        repo_org:
+          title: Organización GitHub
+          type: string
+          description: Organización donde se creará el repositorio.
+          default: ayesa-devsecops
+
+        repo_visibility:
+          title: Visibilidad del Repositorio
+          type: string
+          enum: [private, internal, public]
+          default: internal
+
+        default_branch:
+          title: Rama Principal
+          type: string
+          default: main
+
+        enable_branch_protection:
+          title: Habilitar Branch Protection en main
+          type: boolean
+          default: true
+          description: >
+            Requiere PR + revisión + status checks para mergear a main.
+
+    # ── Paso 4: CI/CD con CloudBees ──────────────────────────────────────────
+    - title: Pipeline CI/CD (CloudBees Unify)
+      properties:
+        enable_pipeline:
+          title: Generar pipeline CloudBees Unify
+          type: boolean
+          default: true
+
+        registry:
+          title: Container Registry
+          type: string
+          description: Registry donde se publicará la imagen Docker.
+          default: ghcr.io/ayesa-devsecops
+          ui:help: "Ejemplos: ghcr.io/org, docker.io/org, registry.ayesa.com"
+
+        enable_sast:
+          title: Análisis SAST (Sonar + Semgrep)
+          type: boolean
+          default: true
+          description: Ejecuta análisis estático de seguridad en cada PR.
+
+        enable_container_scan:
+          title: Escaneo de imagen Docker (Trivy)
+          type: boolean
+          default: true
+          description: Analiza vulnerabilidades en la imagen antes de publicar.
+
+        sonar_project_key:
+          title: SonarQube Project Key (opcional)
+          type: string
+          description: Clave del proyecto en SonarQube. Si se deja vacío se genera automáticamente.
+
+    # ── Paso 5: Infraestructura y despliegue ─────────────────────────────────
+    - title: Infraestructura y Despliegue
+      properties:
+        cloud_provider:
+          title: Cloud Provider
+          type: string
+          enum: [gcp, aws, azure, on-premise]
+          enumNames:
+            - "Google Cloud Platform"
+            - "Amazon Web Services"
+            - "Microsoft Azure"
+            - "On-Premise / Private Cloud"
+          default: gcp
+
+        k8s_namespace:
+          title: Namespace Kubernetes
+          type: string
+          description: Namespace donde vive el servicio. Convenio: <equipo>-<entorno>
+          default: dev
+
+        enable_hpa:
+          title: Habilitar HorizontalPodAutoscaler
+          type: boolean
+          default: true
+          description: Escala automáticamente entre 2 y 10 réplicas según CPU/memoria.
+
+        enable_gitops:
+          title: GitOps con ArgoCD
+          type: boolean
+          default: true
+          description: Genera manifiestos Kubernetes y configura sincronización ArgoCD.
+
+        enable_terraform:
+          title: Generar módulo Terraform (IaC)
+          type: boolean
+          default: true
+          description: >
+            Crea recursos cloud (Service Account, bucket, secrets manager, etc.)
+            usando Terraform.
+
+    # ── Paso 6: Observabilidad ────────────────────────────────────────────────
+    - title: Observabilidad
+      properties:
+        enable_metrics:
+          title: Métricas Prometheus
+          type: boolean
+          default: true
+          description: Expone el endpoint /metrics y genera ServiceMonitor para Prometheus.
+
+        enable_tracing:
+          title: Trazas distribuidas (OpenTelemetry)
+          type: boolean
+          default: true
+          description: Instrumenta la aplicación con OpenTelemetry SDK.
+
+        enable_logging:
+          title: Logging estructurado (JSON → Loki)
+          type: boolean
+          default: true
+
+        grafana_dashboard:
+          title: Generar dashboard Grafana
+          type: boolean
+          default: true
+          description: Crea un dashboard pre-configurado con RED metrics (Rate, Errors, Duration).
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PASOS DE SCAFFOLDING
+  # ─────────────────────────────────────────────────────────────────────────────
+  steps:
+
+    # ── 1. Skeleton de la aplicación ──────────────────────────────────────────
+    - id: fetch-skeleton
+      name: "Generar estructura base del servicio"
+      action: fetch:template
+      input:
+        url: ./skeletons/golden-path-microservice
+        targetPath: .
+        values:
+          service_name:         ${{ parameters.service_name }}
+          description:          ${{ parameters.description }}
+          owner:                ${{ parameters.owner }}
+          system:               ${{ parameters.system }}
+          lifecycle:            ${{ parameters.lifecycle }}
+          language:             ${{ parameters.language }}
+          expose_openapi:       ${{ parameters.expose_openapi }}
+          registry:             ${{ parameters.registry }}
+          k8s_namespace:        ${{ parameters.k8s_namespace }}
+          cloud_provider:       ${{ parameters.cloud_provider }}
+          enable_pipeline:      ${{ parameters.enable_pipeline }}
+          enable_sast:          ${{ parameters.enable_sast }}
+          enable_container_scan: ${{ parameters.enable_container_scan }}
+          enable_hpa:           ${{ parameters.enable_hpa }}
+          enable_gitops:        ${{ parameters.enable_gitops }}
+          enable_terraform:     ${{ parameters.enable_terraform }}
+          enable_metrics:       ${{ parameters.enable_metrics }}
+          enable_tracing:       ${{ parameters.enable_tracing }}
+          enable_logging:       ${{ parameters.enable_logging }}
+          grafana_dashboard:    ${{ parameters.grafana_dashboard }}
+          repo_org:             ${{ parameters.repo_org }}
+          default_branch:       ${{ parameters.default_branch }}
+          sonar_project_key:    ${{ parameters.sonar_project_key | default(parameters.service_name) }}
+
+    # ── 2. Publicar repositorio en GitHub ─────────────────────────────────────
+    - id: publish
+      name: "Crear repositorio GitHub"
+      action: publish:github
+      input:
+        allowedHosts:
+          - github.com
+        description: ${{ parameters.description }}
+        repoUrl: "github.com?repo=${{ parameters.service_name }}&owner=${{ parameters.repo_org }}"
+        defaultBranch: ${{ parameters.default_branch }}
+        repoVisibility: ${{ parameters.repo_visibility }}
+        gitAuthorName: "Backstage Golden Path Bot"
+        gitAuthorEmail: "idp-bot@ayesa.com"
+        topics:
+          - golden-path
+          - microservice
+          - ${{ parameters.language }}
+
+    # ── 3. Protección de rama principal ──────────────────────────────────────
+    - id: branch-protection
+      name: "Configurar Branch Protection"
+      if: ${{ parameters.enable_branch_protection }}
+      action: github:repo:push
+      input:
+        repoUrl: "github.com?repo=${{ parameters.service_name }}&owner=${{ parameters.repo_org }}"
+        branchName: ${{ parameters.default_branch }}
+        requireCodeOwnerReviews: true
+        requiredStatusCheckContexts:
+          - "ci/cloudbees"
+          - "security/trivy"
+          - "quality/sonar"
+
+    # ── 4. Registrar en el catálogo Backstage ────────────────────────────────
+    - id: register
+      name: "Registrar componente en el catálogo"
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: "/catalog-info.yaml"
+
+    # ── 5. Crear aplicación ArgoCD ────────────────────────────────────────────
+    - id: argocd-create
+      name: "Crear aplicación ArgoCD (GitOps)"
+      if: ${{ parameters.enable_gitops }}
+      action: argocd:create-resources
+      input:
+        appName: ${{ parameters.service_name }}-${{ parameters.k8s_namespace }}
+        argoInstance: argocd-ayesa
+        namespace: ${{ parameters.k8s_namespace }}
+        repoUrl: ${{ steps['publish'].output.remoteUrl }}
+        path: "deploy/k8s/overlays/${{ parameters.k8s_namespace }}"
+        labelValue: ${{ parameters.service_name }}
+
+    # ── 6. Notificación al equipo ─────────────────────────────────────────────
+    - id: notify-slack
+      name: "Notificar al equipo en Slack"
+      action: http:backstage:request
+      input:
+        method: POST
+        path: /api/proxy/slack-webhook
+        headers:
+          Content-Type: application/json
+        body:
+          text: >
+            :rocket: *Nuevo servicio creado con Golden Path*
+            Servicio: `${{ parameters.service_name }}`
+            Owner: ${{ parameters.owner }}
+            Repositorio: ${{ steps['publish'].output.remoteUrl }}
+            Entorno inicial: `${{ parameters.k8s_namespace }}`
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SALIDAS (links útiles al finalizar el wizard)
+  # ─────────────────────────────────────────────────────────────────────────────
+  output:
+    links:
+      - title: "Repositorio GitHub"
+        icon: github
+        url: ${{ steps['publish'].output.remoteUrl }}
+
+      - title: "Ver en el catálogo"
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+
+      - title: "Pipeline CloudBees"
+        icon: dashboard
+        url: "https://cloudbees.ayesa.com/job/${{ parameters.service_name }}"
+
+      - title: "ArgoCD - Estado del despliegue"
+        icon: kubernetes
+        url: "https://argocd.ayesa.com/applications/${{ parameters.service_name }}-${{ parameters.k8s_namespace }}"
+
+      - title: "Dashboard Grafana"
+        icon: dashboard
+        url: "https://grafana.ayesa.com/d/${{ parameters.service_name }}"
+
+      - title: "SonarQube - Calidad de código"
+        icon: dashboard
+        url: "https://sonar.ayesa.com/dashboard?id=${{ parameters.sonar_project_key | default(parameters.service_name) }}"

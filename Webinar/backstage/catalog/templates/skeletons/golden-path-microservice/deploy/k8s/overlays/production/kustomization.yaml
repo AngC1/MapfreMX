@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: production
+
+bases:
+  - ../../base
+
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: ${{ values.service_name }}
+    spec:
+      replicas: 3
+      template:
+        spec:
+          containers:
+            - name: ${{ values.service_name }}
+              image: ${{ values.registry }}/${{ values.service_name }}:latest
+              resources:
+                requests:
+                  cpu: "250m"
+                  memory: "512Mi"
+                limits:
+                  cpu: "1000m"
+                  memory: "1Gi"
+
+images:
+  - name: ${{ values.registry }}/${{ values.service_name }}
+    newTag: latest

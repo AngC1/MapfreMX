@@ -1,0 +1,93 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: cloudbees-app-template
+  title: CloudBees Application Template
+  description: Crear una nueva aplicación con pipeline CloudBees Unify
+  tags:
+    - recommended
+    - cloudbees
+    - nodejs
+spec:
+  owner: devops-team
+  type: service
+  
+  parameters:
+    - title: Información de la Aplicación
+      required:
+        - app_name
+        - description
+      properties:
+        app_name:
+          title: Nombre de la Aplicación
+          type: string
+          description: Nombre único para tu aplicación
+          ui:autofocus: true
+          ui:options:
+            rows: 1
+        description:
+          title: Descripción
+          type: string
+          description: Descripción de la aplicación
+        owner:
+          title: Owner
+          type: string
+          description: Owner del componente
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: [Group, User]
+    
+    - title: Configuración del Pipeline
+      properties:
+        registry:
+          title: Container Registry
+          type: string
+          default: docker.io
+          description: Registry para imágenes Docker
+        build_tool:
+          title: Build Tool
+          type: string
+          enum:
+            - npm
+            - yarn
+            - maven
+            - gradle
+          default: npm
+          description: Herramienta de construcción
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./template
+        values:
+          app_name: ${{ parameters.app_name }}
+          description: ${{ parameters.description }}
+          registry: ${{ parameters.registry }}
+          build_tool: ${{ parameters.build_tool }}
+
+    - id: publish
+      name: Publish
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: ${{ parameters.description }}
+        repoUrl: github.com?repo=${{ parameters.app_name }}&owner=ayesa
+        defaultBranch: main
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

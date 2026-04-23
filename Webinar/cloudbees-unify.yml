@@ -1,0 +1,40 @@
+# CloudBees Unify pipeline (template)
+# Ajusta los valores de parámetros y credenciales según tu entorno.
+
+parameters:
+  APP_NAME: webinar-app
+  REPO_URL: https://github.com/org/repo.git
+  BRANCH: main
+  REGISTRY: registry.example.com
+  IMAGE_NAME: org/webinar-app
+  DEPLOY_ENV: staging
+
+pipeline:
+  name: ${APP_NAME}-ci-cd
+  triggers:
+    - type: git
+      repo: ${REPO_URL}
+      branch: ${BRANCH}
+
+stages:
+  - name: build
+    steps:
+      - name: install-build
+        run: npm ci; npm run build
+
+  - name: test
+    steps:
+      - name: run-tests
+        run: npm run test
+
+  - name: package
+    steps:
+      - name: build-image
+        run: docker build -t ${REGISTRY}/${IMAGE_NAME}:${BRANCH} .
+      - name: push-image
+        run: docker push ${REGISTRY}/${IMAGE_NAME}:${BRANCH}
+
+  - name: deploy
+    steps:
+      - name: deploy
+        run: ./deploy.sh ${DEPLOY_ENV} ${REGISTRY}/${IMAGE_NAME}:${BRANCH}

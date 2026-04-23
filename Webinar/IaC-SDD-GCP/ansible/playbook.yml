@@ -1,0 +1,9 @@
+---
+- name: Configurar VM segun especificacion
+  hosts: app
+  become: true
+  vars:
+    ops_user: "ops"
+  roles:
+    - role: hardening
+    - role: nginx

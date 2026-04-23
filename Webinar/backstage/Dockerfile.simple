@@ -1,0 +1,35 @@
+# Dockerfile simplificado para Backstage.io (modo desarrollo)
+# Más rápido de construir, ideal para demos
+
+FROM node:18-bullseye
+
+# Instalar dependencias del sistema
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3 \
+    g++ \
+    build-essential \
+    git \
+    curl \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Variables de entorno
+ENV NODE_ENV=development
+
+WORKDIR /app
+
+# Crear usuario
+RUN useradd -m -u 1000 backstage && chown -R backstage:backstage /app
+
+USER backstage
+
+# Crear app de Backstage (se hace en runtime en el primer arranque)
+# Copiar script de inicialización
+COPY --chown=backstage:backstage init-backstage.sh /app/init-backstage.sh
+RUN chmod +x /app/init-backstage.sh
+
+EXPOSE 7007
+
+# Ejecutar script de inicialización y luego arrancar en modo dev
+CMD ["/app/init-backstage.sh"]

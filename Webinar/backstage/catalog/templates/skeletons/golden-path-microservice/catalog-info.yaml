@@ -1,0 +1,38 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.service_name }}
+  title: ${{ values.service_name }}
+  description: ${{ values.description }}
+  tags:
+    - ${{ values.language }}
+    - microservice
+    - golden-path
+  annotations:
+    # Vincula con el repositorio de código fuente
+    github.com/project-slug: ${{ values.repo_org }}/${{ values.service_name }}
+    # TechDocs generados desde el propio repo
+    backstage.io/techdocs-ref: dir:.
+    # Vinculación con pipeline CI/CD
+    cloudbees.com/pipeline-url: https://cloudbees.ayesa.com/job/${{ values.service_name }}
+    # Métricas de calidad
+    sonarqube.org/project-key: ${{ values.sonar_project_key }}
+    # Enlace al dashboard de observabilidad
+    grafana/dashboard-selector: "title=${{ values.service_name }}"
+    grafana/alert-label-selector: "service=${{ values.service_name }}"
+spec:
+  type: service
+  lifecycle: ${{ values.lifecycle }}
+  owner: ${{ values.owner }}
+  system: ${{ values.system }}
+  # APIs que expone este servicio
+  providesApis:
+{%- if values.expose_openapi %}
+    - ${{ values.service_name }}-api
+{%- else %}
+    []
+{%- endif %}
+  consumesApis: []
+  # Dependencias de infraestructura
+  dependsOn:
+    - resource:default/database-${{ values.service_name }}

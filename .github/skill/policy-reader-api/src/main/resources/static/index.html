@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Policy Reader API – Demo</title>
+  <style>
+    :root {
+      --mapfre-red:   #CC0000;
+      --mapfre-dark:  #990000;
+      --mapfre-light: #fff5f5;
+      --gray-100:     #f8f9fa;
+      --gray-200:     #e9ecef;
+      --gray-600:     #6c757d;
+      --green:        #198754;
+      --orange:       #fd7e14;
+      --text:         #212529;
+      --radius:       10px;
+      --shadow:       0 4px 24px rgba(0,0,0,.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--gray-100);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--mapfre-red);
+      color: #fff;
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+    }
+
+    /* Logotipo SVG inline de Mapfre */
+    .logo svg { height: 36px; }
+
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      color: #fff;
+    }
+
+    .badge {
+      font-size: .75rem;
+      font-weight: 600;
+      background: rgba(255,255,255,.2);
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 20px;
+      padding: 3px 12px;
+      letter-spacing: .04em;
+    }
+
+    /* ── MAIN ── */
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: var(--mapfre-red);
+      color: #fff;
+      padding: .75rem 1.25rem;
+      font-weight: 700;
+      font-size: .9rem;
+      letter-spacing: .03em;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .card-body { padding: 1.25rem; }
+
+    /* ── INPUT ── */
+    label { font-size: .82rem; font-weight: 600; color: var(--gray-600); }
+
+    textarea {
+      width: 100%;
+      height: 280px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 6px;
+      padding: .75rem;
+      font-family: 'Cascadia Code', 'Fira Mono', monospace;
+      font-size: .85rem;
+      line-height: 1.6;
+      resize: vertical;
+      color: var(--text);
+      transition: border-color .2s;
+    }
+    textarea:focus { outline: none; border-color: var(--mapfre-red); }
+
+    .examples { margin: .75rem 0 1rem; display: flex; flex-wrap: wrap; gap: .5rem; }
+
+    .example-btn {
+      font-size: .75rem;
+      background: var(--mapfre-light);
+      border: 1px solid #f5c6c6;
+      color: var(--mapfre-dark);
+      border-radius: 20px;
+      padding: 3px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background .15s;
+    }
+    .example-btn:hover { background: #f5c6c6; }
+
+    .btn-read {
+      width: 100%;
+      padding: .75rem;
+      background: var(--mapfre-red);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .04em;
+      transition: background .2s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+    }
+    .btn-read:hover { background: var(--mapfre-dark); }
+    .btn-read:active { transform: scale(.98); }
+    .btn-read:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* ── OUTPUT ── */
+    .result-empty {
+      text-align: center;
+      color: var(--gray-600);
+      padding: 3rem 1rem;
+      font-size: .9rem;
+    }
+    .result-empty .icon { font-size: 2.5rem; margin-bottom: .5rem; }
+
+    /* Confianza */
+    .confidence-wrap { margin-bottom: 1.25rem; }
+    .confidence-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: .8rem;
+      font-weight: 600;
+      margin-bottom: .35rem;
+    }
+    .confidence-bar {
+      height: 10px;
+      background: var(--gray-200);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .confidence-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width .6s ease;
+    }
+
+    /* Campos */
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .65rem;
+      margin-bottom: 1rem;
+    }
+
+    .field {
+      background: var(--gray-100);
+      border-radius: 6px;
+      padding: .6rem .85rem;
+      border-left: 3px solid var(--gray-200);
+      transition: border-color .2s;
+    }
+    .field.found  { border-left-color: var(--green); }
+    .field.missing { border-left-color: var(--orange); background: #fff8f0; }
+
+    .field-name {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--gray-600);
+      margin-bottom: 2px;
+    }
+    .field-value { font-size: .88rem; font-weight: 600; }
+    .field.missing .field-value { color: var(--orange); font-style: italic; font-weight: 400; }
+
+    /* JSON raw */
+    details { margin-top: 1rem; }
+    summary {
+      cursor: pointer;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      user-select: none;
+    }
+    pre {
+      margin-top: .5rem;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 1rem;
+      border-radius: 6px;
+      font-size: .78rem;
+      overflow: auto;
+      max-height: 260px;
+      line-height: 1.55;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 1.25rem;
+      font-size: .75rem;
+      color: var(--gray-600);
+      border-top: 1px solid var(--gray-200);
+    }
+    footer a { color: var(--mapfre-red); text-decoration: none; }
+
+    /* ── SPINNER ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ── ERROR ── */
+    .error-box {
+      background: #fff5f5;
+      border: 1px solid #f5c6c6;
+      border-radius: 6px;
+      padding: .85rem 1rem;
+      color: var(--mapfre-dark);
+      font-size: .85rem;
+      margin-top: .5rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <!-- Logotipo MAPFRE (texto SVG tipografía corporativa) -->
+    <svg viewBox="0 0 120 36" xmlns="http://www.w3.org/2000/svg" aria-label="MAPFRE">
+      <rect width="120" height="36" rx="4" fill="white"/>
+      <text x="8" y="26" font-family="'Arial Black',Arial,sans-serif"
+            font-size="22" font-weight="900" fill="#CC0000" letter-spacing="1">MAPFRE</text>
+    </svg>
+    <span class="logo-text" style="display:none">MAPFRE</span>
+  </div>
+  <span class="badge">Policy Reader API · Demo</span>
+</header>
+
+<main>
+
+  <!-- ── PANEL IZQUIERDO: INPUT ── -->
+  <section class="card">
+    <div class="card-header">
+      <span>📄</span> Texto de la póliza
+    </div>
+    <div class="card-body">
+      <label for="policyText">Pega o escribe el texto libre de la póliza:</label>
+
+      <div class="examples">
+        <span style="font-size:.75rem;color:var(--gray-600);align-self:center">Ejemplos rápidos:</span>
+        <button class="example-btn" data-example="full">Póliza completa</button>
+        <button class="example-btn" data-example="partial">Póliza parcial</button>
+        <button class="example-btn" data-example="hogar">Hogar</button>
+        <button class="example-btn" data-example="vida">Vida</button>
+      </div>
+
+      <textarea id="policyText" spellcheck="false"
+        placeholder="Aseguradora: Mapfre&#10;Numero de poliza: POL-2026-0001&#10;Tomador: Ana Perez&#10;Producto: Auto Premium&#10;Fecha inicio: 2026-01-01&#10;Fecha fin: 2026-12-31"></textarea>
+
+      <button class="btn-read" id="readBtn" onclick="readPolicy()" style="margin-top:1rem">
+        <span id="btnLabel">Leer póliza</span>
+      </button>
+
+      <div id="errorBox" class="error-box" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- ── PANEL DERECHO: OUTPUT ── -->
+  <section class="card">
+    <div class="card-header">
+      <span>🔍</span> Resultado del API
+    </div>
+    <div class="card-body" id="output">
+      <div class="result-empty">
+        <div class="icon">📋</div>
+        <p>Introduce el texto de una póliza y pulsa <strong>Leer póliza</strong>.<br/>
+        El API extraerá los campos clave de forma automática.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  API: <code>POST /api/v1/policies/read</code> &nbsp;·&nbsp;
+  <a href="/swagger-ui.html" target="_blank">Swagger UI</a> &nbsp;·&nbsp;
+  <a href="/v3/api-docs" target="_blank">OpenAPI JSON</a>
+</footer>
+
+<script>
+  /* ── Ejemplos predefinidos ── */
+  const EXAMPLES = {
+    full: `Aseguradora: Mapfre\nNumero de poliza: POL-2026-0001\nTomador: Ana Perez\nProducto: Auto Premium\nFecha inicio: 2026-01-01\nFecha fin: 2026-12-31`,
+    partial: `Numero de poliza: POL-2026-0002\nTomador: Luis Diaz`,
+    hogar: `Aseguradora: Mapfre\nNumero de poliza: POL-2026-1001\nTomador: Laura Gomez\nProducto: Hogar Base\nFecha inicio: 2026-03-01\nFecha fin: 2027-02-28`,
+    vida: `Compania: Mapfre\nPoliza: POL-VIDA-2026-555\nAsegurado: Carlos Ruiz\nModalidad: Vida Riesgo\nVigencia desde: 2026-06-01\nVigencia hasta: 2031-05-31`,
+  };
+
+  document.querySelectorAll('.example-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('policyText').value = EXAMPLES[btn.dataset.example] || '';
+    });
+  });
+
+  /* ── Llamada al API ── */
+  async function readPolicy() {
+    const rawText = document.getElementById('policyText').value.trim();
+    const btn     = document.getElementById('readBtn');
+    const label   = document.getElementById('btnLabel');
+    const errBox  = document.getElementById('errorBox');
+
+    errBox.style.display = 'none';
+
+    if (!rawText) {
+      showError('Introduce el texto de la póliza antes de continuar.');
+      return;
+    }
+
+    // Estado cargando
+    btn.disabled = true;
+    label.innerHTML = '<div class="spinner"></div> Leyendo…';
+
+    try {
+      const res = await fetch('/api/v1/policies/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rawText }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: 'Error desconocido' }));
+        throw new Error(err.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      renderResult(data);
+    } catch (e) {
+      showError('No se pudo conectar con el API: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      label.textContent = 'Leer póliza';
+    }
+  }
+
+  /* ── Renderizado del resultado ── */
+  function renderResult(d) {
+    const pct   = Math.round(d.confidence * 100);
+    const color = pct === 100 ? '#198754' : pct >= 50 ? '#fd7e14' : '#CC0000';
+
+    const LABELS = {
+      policyNumber: 'Nº Póliza',
+      insurerName:  'Aseguradora',
+      holderName:   'Tomador',
+      productName:  'Producto',
+      effectiveFrom:'Inicio vigencia',
+      effectiveTo:  'Fin vigencia',
+    };
+
+    const fields = Object.entries(LABELS).map(([key, label]) => {
+      const val     = d[key];
+      const missing = d.missingFields.includes(key);
+      return `
+        <div class="field ${missing ? 'missing' : 'found'}">
+          <div class="field-name">${label}</div>
+          <div class="field-value">${missing ? 'No detectado' : (val ?? '—')}</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('output').innerHTML = `
+      <div class="confidence-wrap">
+        <div class="confidence-label">
+          <span>Índice de confianza</span>
+          <span style="color:${color}">${pct}%</span>
+        </div>
+        <div class="confidence-bar">
+          <div class="confidence-fill" style="width:0%;background:${color}" id="cfill"></div>
+        </div>
+      </div>
+
+      <div class="fields-grid">${fields}</div>
+
+      ${d.missingFields.length ? `
+        <div style="font-size:.8rem;color:#fd7e14;font-weight:600;margin-bottom:.75rem">
+          ⚠️ Campos no detectados: ${d.missingFields.join(', ')}
+        </div>` : `
+        <div style="font-size:.8rem;color:#198754;font-weight:600;margin-bottom:.75rem">
+          ✅ Todos los campos detectados correctamente
+        </div>`}
+
+      <details>
+        <summary>Ver respuesta JSON completa</summary>
+        <pre>${JSON.stringify(d, null, 2)}</pre>
+      </details>`;
+
+    // Animación de la barra
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.getElementById('cfill').style.width = pct + '%';
+      });
+    });
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠️ ' + msg;
+    box.style.display = 'block';
+  }
+</script>
+</body>
+</html>

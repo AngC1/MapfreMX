@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ${{ values.k8s_namespace }}
+
+bases:
+  - ../../base
+
+# En dev se usa 1 réplica y recursos reducidos para ahorrar costes
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: ${{ values.service_name }}
+    spec:
+      replicas: 1
+      template:
+        spec:
+          containers:
+            - name: ${{ values.service_name }}
+              # Tag actualizado por el pipeline CI/CD
+              image: ${{ values.registry }}/${{ values.service_name }}:latest
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "256Mi"
+
+images:
+  - name: ${{ values.registry }}/${{ values.service_name }}
+    newTag: latest
