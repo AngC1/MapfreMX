@@ -4,7 +4,7 @@ metadata:
   name: ${{ values.name }}
   description: ${{ values.description }}
   annotations:
-    github.com/project-slug: AngC1/${{ values.name }}
+    github.com/project-slug: ${{ values.repoOwner }}/${{ values.name }}
 spec:
   type: service
   lifecycle: production

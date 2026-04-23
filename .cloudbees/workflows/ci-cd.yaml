@@ -35,4 +35,8 @@ jobs:
       - name: Release CD bundle
         run: |
           set -e
+          if [ "${CLOUDBEES_EVENT:-}" = "pull_request" ] || [ "${CLOUDBEES_BRANCH:-}" != "main" ]; then
+            echo "Skipping release-cd outside push to main."
+            exit 0
+          fi
           tar -czf release-bundle.tgz .

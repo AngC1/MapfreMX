@@ -12,6 +12,7 @@ spec:
     - title: Información del componente API
       required:
         - name
+        - repoOwner
         - owner
       properties:
         name:
@@ -19,6 +20,10 @@ spec:
           type: string
           pattern: '^[a-z0-9-]+$'
           description: Usa minúsculas, números y guiones
+        repoOwner:
+          title: Organización/usuario de GitHub
+          type: string
+          default: AngC1
         description:
           title: Descripción
           type: string
@@ -35,6 +40,7 @@ spec:
         url: ./skeleton
         values:
           name: ${{ parameters.name }}
+          repoOwner: ${{ parameters.repoOwner }}
           description: ${{ parameters.description }}
           owner: ${{ parameters.owner }}
 
@@ -42,7 +48,7 @@ spec:
       name: Publicar en GitHub
       action: publish:github
       input:
-        repoUrl: github.com?owner=AngC1&repo=${{ parameters.name }}
+        repoUrl: github.com?owner=${{ parameters.repoOwner }}&repo=${{ parameters.name }}
         defaultBranch: main
         description: ${{ parameters.description }}
 
