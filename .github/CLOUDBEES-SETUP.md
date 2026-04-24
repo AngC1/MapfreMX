@@ -7,7 +7,6 @@
 ```
 URL: http://127.0.0.1:8081/job/Cloudbees%20CI/configure
 Usuario: Ang
-Contraseña: C
 ```
 
 ### 2. Crear Nuevo Job Pipeline
