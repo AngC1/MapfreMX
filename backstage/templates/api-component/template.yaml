@@ -1,0 +1,68 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: api-component-template
+  title: API Component
+  description: Template para crear un componente API con CI/CD (GitHub Actions, Jenkins y CloudBees)
+spec:
+  owner: group:default/platform
+  type: service
+
+  parameters:
+    - title: Información del componente API
+      required:
+        - name
+        - repoOwner
+        - owner
+      properties:
+        name:
+          title: Nombre del componente
+          type: string
+          pattern: '^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$'
+          description: Usa minúsculas, números y guiones (sin guion inicial/final)
+        repoOwner:
+          title: Organización/usuario de GitHub
+          type: string
+          default: AngC1
+        description:
+          title: Descripción
+          type: string
+        owner:
+          title: Owner
+          type: string
+          default: group:default/platform
+
+  steps:
+    - id: fetch-base
+      name: Cargar base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          repoOwner: ${{ parameters.repoOwner }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+
+    - id: publish
+      name: Publicar en GitHub
+      action: publish:github
+      input:
+        repoUrl: github.com?owner=${{ parameters.repoOwner }}&repo=${{ parameters.name }}
+        defaultBranch: main
+        description: ${{ parameters.description }}
+
+    - id: register
+      name: Registrar en catálogo
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Repositorio
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Entidad en catálogo
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}
