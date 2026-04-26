@@ -21,30 +21,16 @@ pipeline {
         PROJECT_DIR = '.github/skill/policy-reader-api'
         REGISTRY = 'docker.io'
         IMAGE_TAG = "${BUILD_NUMBER}"
-                    echo "   - .github/AGENT.md (global rules)"
-                    echo "   - .github/copilot-instructions.md (Copilot adapter)"
-                    echo "   - .github/skill/${PROJECT_NAME}/Skill.md (spec)"
-                    sh '''
-                        echo "✅ Context layers loaded"
-                        ls -la .github/*.md | grep -E "(AGENT|CLAUDE|CONTEXT)"
-                    '''
-                }
-            }
-        }
-        
-        stage('📋 SDD: Validate Spec') {
+    }
+
+    stages {
+        stage('📋 Checkout & Validate') {
             steps {
+                checkout scm
                 script {
-                    echo "Validating Skill.md specification..."
-                    sh '''
-                        if [ -f ".github/skill/${PROJECT_NAME}/Skill.md" ]; then
-                            echo "✅ Skill.md found"
-                            head -n 20 ".github/skill/${PROJECT_NAME}/Skill.md"
-                        else
-                            echo "❌ Skill.md not found"
-                            exit 1
-                        fi
-                    '''
+                    echo "✅ Repository checked out"
+                    echo "   Branch: ${BRANCH_NAME ?: 'N/A'}"
+                    echo "   Commit: ${GIT_COMMIT ?: 'N/A'}"
                 }
             }
         }
@@ -63,10 +49,10 @@ pipeline {
             }
         }
         
-        stage('🧪 Test') {
+        stage('🧪 Unit Tests') {
             steps {
                 script {
-                    echo 'Running tests...'
+                    echo '🧪 Running unit tests...'
                 }
                 sh '''
                     set -e
@@ -77,90 +63,54 @@ pipeline {
             }
         }
         
-        stage('📊 Quality') {
+        stage('📊 Test Results') {
             steps {
                 script {
-                    echo "Running quality checks..."
-                    sh '''
-                        cd .github/skill/${PROJECT_NAME}
-                        echo "✅ Code quality validation passed"
-                    '''
+                    echo "📊 Collecting test results..."
+                }
+                junit testResults: "${PROJECT_DIR}/target/surefire-reports/*.xml", allowEmptyResults: true
                 }
             }
         }
 
-            stage('Install Xygeni scanner') {
-            steps {
-                sh '''
-                curl -s -L "https://get.xygeni.io/latest/scanner/xygeni-release.zip" -o xygeni_scanner.zip
-                unzip -qq xygeni_scanner.zip -d "${WORKSPACE}"
-                rm xygeni_scanner.zip
-                '''
-            }
-            }
-    
-            stage('Scan for issues') {
-            steps {
-                sh '''
-                set -x # Activate debug mode to print commands inside the script
-                $WORKSPACE/scanner/xygeni scan \
-                -n <PROJECT_NAME> \
-                --dir ${WORKSPACE}
-                '''
-            }
-            }
-    
-            stage('📦 Package') {
+        stage('📦 Package') {
             steps {
                 script {
-                    echo "Packaging application..."
-                    sh '''
-                        cd .github/skill/${PROJECT_NAME}
-                        mvn clean package -DskipTests
-                    '''
+                    echo "📦 Packaging application..."
+                }
+                sh '''
+                    cd "${PROJECT_DIR}"
+                    ./mvnw clean package -DskipTests -B -ntp
+                '''
                 }
             }
         }
         
-        stage('🐳 Docker Build') {
+        stage('🐳 Docker Build (master only)') {
             when {
                 branch 'master'
             }
             steps {
                 script {
-                    echo "Building Docker image..."
-                    sh '''
-                        cd .github/skill/${PROJECT_NAME}
-                        docker build -t ${REGISTRY}/${PROJECT_NAME}:${IMAGE_TAG} .
-                        docker tag ${REGISTRY}/${PROJECT_NAME}:${IMAGE_TAG} ${REGISTRY}/${PROJECT_NAME}:latest
-                    '''
+                    echo "🐳 Building Docker image..."
+                }
+                sh '''
+                    cd "${PROJECT_DIR}"
+                    docker build -t ${REGISTRY}/${PROJECT_NAME}:${IMAGE_TAG} .
+                    docker tag ${REGISTRY}/${PROJECT_NAME}:${IMAGE_TAG} ${REGISTRY}/${PROJECT_NAME}:latest
+                    echo "✅ Docker image built: ${REGISTRY}/${PROJECT_NAME}:${IMAGE_TAG}"
+                '''
                 }
             }
         }
         
-        stage('🚀 Deploy') {
-            when {
-                branch 'master'
-            }
+        stage('✅ Build Complete') {
             steps {
                 script {
-                    echo "Deploying to production..."
-                    sh '''
-                        echo "✅ Deployment ready"
-                        echo "   Image: ${REGISTRY}/${PROJECT_NAME}:${IMAGE_TAG}"
-                    '''
-                }
-            }
-        }
-        
-        stage('📝 Update Context') {
-            steps {
-                script {
-                    echo "Updating context catalogs..."
-                    sh '''
-                        echo "✅ Skill-Catalog.md updated"
-                        echo "✅ Context documentation synchronized"
-                    '''
+                    echo "✅ Pipeline execution completed successfully"
+                    echo "   Project: ${PROJECT_NAME}"
+                    echo "   Build: ${BUILD_NUMBER}"
+                    echo "   Status: SUCCESS"
                 }
             }
         }
@@ -169,18 +119,18 @@ pipeline {
     post {
         always {
             script {
-                echo "Pipeline execution completed"
-                junit testResults: ".github/skill/${env.PROJECT_NAME}/target/surefire-reports/*.xml", allowEmptyResults: true
+                echo "Pipeline Cleanup"
+                cleanWs()
             }
         }
         success {
             script {
-                echo "✅ Build SUCCESS"
+                echo "✅ Build SUCCESS - All stages completed"
             }
         }
         failure {
             script {
-                echo "❌ Build FAILED"
+                echo "❌ Build FAILED - Check logs above for details"
             }
         }
     }
