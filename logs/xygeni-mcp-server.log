@@ -1,0 +1,18 @@
+2026-04-24T15:56:25.607+02:00  INFO 23436 --- [xygeni-mcp-server] [main] i.xygeni.mcp.XygeniMcpServerApplication  : Starting XygeniMcpServerApplication v1.0.0 using Java 21.0.2 with PID 23436 (C:\Users\MACADIAD\.vscode\extensions\xygeni-security.xygeni-scanner-vscode-1.2.5\.xygeni-mcp\xygeni-mcp-server.jar started by MACADIAD in C:\Users\MACADIAD\OneDrive - AYESA\Documentos\GitHub\MapfreMX)
+2026-04-24T15:56:25.611+02:00  INFO 23436 --- [xygeni-mcp-server] [main] i.xygeni.mcp.XygeniMcpServerApplication  : No active profile set, falling back to 1 default profile: "default"
+2026-04-24T15:56:26.563+02:00  INFO 23436 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Enable tools capabilities, notification: true
+2026-04-24T15:56:26.565+02:00  INFO 23436 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Registered tools: 9
+2026-04-24T15:56:26.565+02:00  INFO 23436 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Enable resources capabilities, notification: true
+2026-04-24T15:56:26.566+02:00  INFO 23436 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Enable prompts capabilities, notification: true
+2026-04-24T15:56:26.567+02:00  INFO 23436 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Enable completions capabilities
+2026-04-24T15:56:26.770+02:00  INFO 23436 --- [xygeni-mcp-server] [main] i.xygeni.mcp.XygeniMcpServerApplication  : Started XygeniMcpServerApplication in 1.648 seconds (process running for 2.282)
+2026-04-24T15:57:17.955+02:00  INFO 43248 --- [xygeni-mcp-server] [main] i.xygeni.mcp.XygeniMcpServerApplication  : Starting XygeniMcpServerApplication v1.0.0 using Java 21.0.2 with PID 43248 (C:\Users\MACADIAD\.vscode\extensions\xygeni-security.xygeni-scanner-vscode-1.2.5\.xygeni-mcp\xygeni-mcp-server.jar started by MACADIAD in c:\Users\MACADIAD\OneDrive - AYESA\Documentos\GitHub\MapfreMX)
+2026-04-24T15:57:17.957+02:00  INFO 43248 --- [xygeni-mcp-server] [main] i.xygeni.mcp.XygeniMcpServerApplication  : No active profile set, falling back to 1 default profile: "default"
+2026-04-24T15:57:18.845+02:00  INFO 43248 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Enable tools capabilities, notification: true
+2026-04-24T15:57:18.846+02:00  INFO 43248 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Registered tools: 9
+2026-04-24T15:57:18.847+02:00  INFO 43248 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Enable resources capabilities, notification: true
+2026-04-24T15:57:18.848+02:00  INFO 43248 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Enable prompts capabilities, notification: true
+2026-04-24T15:57:18.849+02:00  INFO 43248 --- [xygeni-mcp-server] [main] o.s.a.m.s.a.McpServerAutoConfiguration   : Enable completions capabilities
+2026-04-24T15:57:19.014+02:00  INFO 43248 --- [xygeni-mcp-server] [pool-2-thread-1] i.m.server.McpAsyncServer                : Client initialize request - Protocol: 2025-11-25, Capabilities: ClientCapabilities[experimental=null, roots=RootCapabilities[listChanged=true], sampling=Sampling[]], Info: Implementation[name=Visual Studio Code, version=1.117.0]
+2026-04-24T15:57:19.025+02:00  WARN 43248 --- [xygeni-mcp-server] [pool-2-thread-1] i.m.server.McpAsyncServer                : Client requested unsupported protocol version: 2025-11-25, so the server will suggest the 2024-11-05 version instead
+2026-04-24T15:57:19.091+02:00  INFO 43248 --- [xygeni-mcp-server] [main] i.xygeni.mcp.XygeniMcpServerApplication  : Started XygeniMcpServerApplication in 1.643 seconds (process running for 2.255)

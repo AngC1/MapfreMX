@@ -1,0 +1,21 @@
+{
+  "name": "backstage-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backstage IDP Demo - AYESA",
+  "scripts": {
+    "start": "backstage-cli start",
+    "build": "backstage-cli build-all"
+  },
+  "dependencies": {
+    "@backstage/core-app-api": "^1.11.0",
+    "@backstage/core-common": "^1.4.0",
+    "@backstage/core-components": "^0.13.0",
+    "@backstage/core-plugin-api": "^1.9.0",
+    "@backstage/frontend-app": "^0.0.37",
+    "@backstage/cli": "^0.24.0"
+  },
+  "devDependencies": {
+    "@backstage/frontend-plugin-api": "^0.5.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+	"servers": {
+		"xygeni-mcp-server": {
+			"timeout": 60,
+			"type": "stdio",
+			"command": "C:\\Users\\MACADIAD\\.jdk\\jdk-21.0.2+13\\bin\\java.exe",
+			"args": [
+				"-jar",
+				"c:\\Users\\MACADIAD\\.vscode\\extensions\\xygeni-security.xygeni-scanner-vscode-1.2.5/.xygeni-mcp/xygeni-mcp-server.jar",
+				"--scannerPath=c:\\Users\\MACADIAD\\.vscode\\extensions\\xygeni-security.xygeni-scanner-vscode-1.2.5/.xygeni"
+			],
+			"env": {
+				"JAVA_HOME": "C:\\Users\\MACADIAD\\.jdk\\jdk-21.0.2+13",
+				"XYGENI_URL": "https://api.xygeni.io",
+				"XYGENI_TOKEN": "xyu_d046a639ae8bf81809b08c6937dc6280bd0d231ced2ba81d5dd20e33745dccac"
+			}
+		},
+		"my-mcp-server-80d1bd93": {
+			"type": "stdio",
+			"command": "selenium",
+			"args": []
+		}
+	},
+	"inputs": []
+}

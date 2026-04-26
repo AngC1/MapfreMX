@@ -1,0 +1,18 @@
+{
+  "name": "e2e",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test:chromium && npm run test:firefox",
+    "test:chromium": "node policy-reader-playwright.mjs --browser=chromium --base-url=http://127.0.0.1:8080",
+    "test:firefox": "node policy-reader-playwright.mjs --browser=firefox --base-url=http://127.0.0.1:8080"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}
