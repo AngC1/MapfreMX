@@ -22,7 +22,7 @@ pipeline {
         PROJECT_DIR = '.github/skill/policy-reader-api'
         REGISTRY = 'docker.io'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        XYGENI_TOKEN = credentials('xyu_6b1e97ee238aaf439071fb922a1e434638c2c7bde7b122b5f6019a0d7b348e9e')
+        XYGENI_TOKEN = credentials('XYGENI_TOKEN')
     }
 
     stages {
