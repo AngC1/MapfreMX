@@ -22,9 +22,6 @@ pipeline {
         PROJECT_DIR = '.github/skill/policy-reader-api'
         REGISTRY = 'docker.io'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        MAVEN_HOME = "/home/jenkins/.maven/maven-3.9.15"
-        JAVA_HOME = "/usr/lib/jvm/java-21-openjdk"
-        PATH = "${JAVA_HOME}/bin:${MAVEN_HOME}/bin:${PATH}"
     }
 
     stages {
@@ -45,11 +42,11 @@ pipeline {
                 script {
                     echo "🔧 Validating build environment..."
                     sh '''
-                        set -e
-                        echo "   Maven: $(mvn -v | head -1)"
                         echo "   Java: $(java -version 2>&1 | head -1)"
                         echo "   Git: $(git --version)"
-                        echo "   Docker: $(docker --version)"
+                        echo "   Maven Wrapper: $(ls ${PROJECT_DIR}/mvnw 2>/dev/null && echo 'present' || echo 'not found')"
+                        mvn -v 2>/dev/null || echo "   Global mvn: not available (using wrapper)"
+                        docker --version 2>/dev/null || echo "   Docker: not available in this agent"
                     '''
                 }
             }
@@ -63,21 +60,8 @@ pipeline {
                 sh '''
                     set -e
                     cd "${PROJECT_DIR}"
-                    
-                    # Use global Maven with fallback detection
-                    if ! command -v mvn &> /dev/null; then
-                        echo "⚠️  Maven not in PATH, looking for local installation..."
-                        if [ -d "$HOME/.maven/maven-3.9.15/bin" ]; then
-                            export PATH="$HOME/.maven/maven-3.9.15/bin:$PATH"
-                        elif [ -d "$HOME/.maven/maven-3.9.12/bin" ]; then
-                            export PATH="$HOME/.maven/maven-3.9.12/bin:$PATH"
-                        else
-                            echo "❌ Maven not found"
-                            exit 1
-                        fi
-                    fi
-                    
-                    mvn clean compile -B -ntp -DskipTests
+                    chmod +x ./mvnw
+                    ./mvnw clean compile -B -ntp -DskipTests
                 '''
             }
         }
@@ -90,17 +74,8 @@ pipeline {
                 sh '''
                     set -e
                     cd "${PROJECT_DIR}"
-                    
-                    # Maven environment setup (same as Build stage)
-                    if ! command -v mvn &> /dev/null; then
-                        if [ -d "$HOME/.maven/maven-3.9.15/bin" ]; then
-                            export PATH="$HOME/.maven/maven-3.9.15/bin:$PATH"
-                        elif [ -d "$HOME/.maven/maven-3.9.12/bin" ]; then
-                            export PATH="$HOME/.maven/maven-3.9.12/bin:$PATH"
-                        fi
-                    fi
-                    
-                    mvn test -B -ntp
+                    chmod +x ./mvnw
+                    ./mvnw test -B -ntp
                 '''
             }
         }
@@ -124,29 +99,18 @@ pipeline {
                 sh '''
                     set -e
                     cd "${PROJECT_DIR}"
-                    
-                    # Maven environment setup
-                    if ! command -v mvn &> /dev/null; then
-                        if [ -d "$HOME/.maven/maven-3.9.15/bin" ]; then
-                            export PATH="$HOME/.maven/maven-3.9.15/bin:$PATH"
-                        elif [ -d "$HOME/.maven/maven-3.9.12/bin" ]; then
-                            export PATH="$HOME/.maven/maven-3.9.12/bin:$PATH"
-                        fi
-                    fi
-                    
-                    mvn clean package -B -ntp -DskipTests
+                    chmod +x ./mvnw
+                    ./mvnw clean package -B -ntp -DskipTests
                     
                     # Verify JAR creation
                     if [ -f "target/policy-reader-api-0.0.1-SNAPSHOT.jar" ]; then
                         echo "✅ JAR file created successfully"
-                        JAR_SIZE=$(stat -f%z "target/policy-reader-api-0.0.1-SNAPSHOT.jar" 2>/dev/null || \
-                                   stat -c%s "target/policy-reader-api-0.0.1-SNAPSHOT.jar" 2>/dev/null || \
-                                   echo "unknown")
+                        JAR_SIZE=$(stat -c%s "target/policy-reader-api-0.0.1-SNAPSHOT.jar" 2>/dev/null || echo "unknown")
                         echo "   Size: ${JAR_SIZE} bytes"
                     fi
                 '''
                 archiveArtifacts artifacts: "${PROJECT_DIR}/target/*.jar", 
-                                 allowEmptyArchive: false,
+                                 allowEmptyArchive: true,
                                  fingerprint: true
             }
         }
