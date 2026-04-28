@@ -22,6 +22,7 @@ pipeline {
         PROJECT_DIR = '.github/skill/policy-reader-api'
         REGISTRY = 'docker.io'
         IMAGE_TAG = "${BUILD_NUMBER}"
+        XYGENI_TOKEN = credentials('xyu_6b1e97ee238aaf439071fb922a1e434638c2c7bde7b122b5f6019a0d7b348e9e')
     }
 
     stages {
@@ -143,6 +144,22 @@ pipeline {
             }
         }
         
+        stage('� Install Xygeni Scanner') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'master'
+                }
+            }
+            steps {
+                sh '''
+                    curl -s -L "https://get.xygeni.io/latest/scanner/xygeni-release.zip" -o xygeni_scanner.zip
+                    unzip -qq xygeni_scanner.zip -d "${WORKSPACE}"
+                    rm xygeni_scanner.zip
+                '''
+            }
+        }
+
         stage('🔍 Security Scan (Xygeni)') {
             when {
                 anyOf {
@@ -151,30 +168,11 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    echo "🔍 Running Xygeni security scan..."
-                }
                 sh '''
-                    set -e
-                    XYGENI_HOME="${WORKSPACE}/xygeni-scanner"
-                    
-                    # Download Xygeni CLI if not present
-                    if [ ! -d "$XYGENI_HOME" ]; then
-                        echo "📥 Downloading Xygeni CLI..."
-                        mkdir -p "$XYGENI_HOME"
-                        
-                        # Note: Replace with actual Xygeni download URL
-                        # wget -q https://xygeni-release.s3.amazonaws.com/xygeni-scanner.zip -O xygeni-scanner.zip
-                        # unzip -q xygeni-scanner.zip -d "$XYGENI_HOME"
-                        
-                        echo "⚠️  Xygeni URL not configured - update pipeline with actual URL"
-                    fi
-                    
-                    # Run scan (commented until Xygeni is properly configured)
-                    # cd "${PROJECT_DIR}"
-                    # $XYGENI_HOME/bin/xygeni scan -r . -p ${PROJECT_NAME} --output ${WORKSPACE}/xygeni-report.json
-                    
-                    echo "ℹ️  Xygeni scan would execute here"
+                    set -x
+                    ${WORKSPACE}/scanner/xygeni scan \\
+                        -n ${PROJECT_NAME} \\
+                        --dir ${WORKSPACE}
                 '''
             }
         }
