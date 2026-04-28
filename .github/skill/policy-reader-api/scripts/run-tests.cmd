@@ -8,6 +8,15 @@ setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
 cd /d "%SCRIPT_DIR%.."
 
+REM Ensure a JDK that supports --release 17 is used
+if exist "C:\Users\MACADIAD\.jdk\jdk-21.0.8(6)\bin\java.exe" (
+    set "JAVA_HOME=C:\Users\MACADIAD\.jdk\jdk-21.0.8(6)"
+    set "PATH=%JAVA_HOME%\bin;%PATH%"
+) else if exist "C:\Users\MACADIAD\.jdk\jdk-21.0.2+13\bin\java.exe" (
+    set "JAVA_HOME=C:\Users\MACADIAD\.jdk\jdk-21.0.2+13"
+    set "PATH=%JAVA_HOME%\bin;%PATH%"
+)
+
 echo [TESTS] Script directory: %SCRIPT_DIR%
 echo [TESTS] Project directory: %cd%
 
@@ -49,5 +58,4 @@ if !errorlevel! equ 0 (
 ) else (
     echo [TESTS] Some tests failed!
     exit /b 1
-)
 )
