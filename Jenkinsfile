@@ -33,9 +33,9 @@ pipeline {
                 checkout scm
                 script {
                     echo "✅ Repository checked out"
-                    echo "   Branch: ${BRANCH_NAME ?: env.GIT_BRANCH ?: 'N/A'}"
-                    echo "   Commit: ${GIT_COMMIT?.take(8) ?: 'N/A'}"
-                    echo "   URL: ${GIT_URL ?: 'N/A'}"
+                    echo "   Branch: ${env.BRANCH_NAME ?: env.GIT_BRANCH ?: 'N/A'}"
+                    echo "   Commit: ${env.GIT_COMMIT ? env.GIT_COMMIT.take(8) : 'N/A'}"
+                    echo "   URL: ${env.GIT_URL ?: 'N/A'}"
                 }
             }
         }
@@ -219,10 +219,9 @@ pipeline {
             steps {
                 script {
                     echo "✅ Pipeline execution completed successfully"
-                    echo "   Project: ${PROJECT_NAME}"
-                    echo "   Build #: ${BUILD_NUMBER}"
+                    echo "   Project: ${env.PROJECT_NAME}"
+                    echo "   Build #: ${env.BUILD_NUMBER}"
                     echo "   Status: SUCCESS ✓"
-                    echo "   Duration: ${currentBuild.durationString}"
                 }
             }
         }
@@ -240,8 +239,7 @@ pipeline {
             script {
                 echo "✅ BUILD SUCCESS - All stages completed"
                 echo "   Repository: https://github.com/AngC1/MapfreMX"
-                echo "   Build Number: ${BUILD_NUMBER}"
-                echo "   Timestamp: ${new java.util.Date().format('yyyy-MM-dd HH:mm:ss')}"
+                echo "   Build Number: ${env.BUILD_NUMBER}"
             }
         }
         failure {
